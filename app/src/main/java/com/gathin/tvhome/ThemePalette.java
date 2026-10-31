@@ -1,6 +1,6 @@
 package com.gathin.tvhome;
 
-/** Central visual tokens for the fixed NOTHING TV renderer. */
+/** Central visual tokens for Dock Deck Air and the preserved legacy themes. */
 final class ThemePalette {
     static final int ORIGINAL = -1;
     static final int NOTHING_LIGHT = 0;
@@ -9,11 +9,16 @@ final class ThemePalette {
     static final int INDUSTRIAL_MONO = 3;
     static final int WARM_PREMIUM = 4;
     static final int PLAYFUL_ACCENT = 5;
-    static final int COUNT = 6;
+    static final int DOCK_DARK = 6;
+    static final int DOCK_LIGHT = 7;
+    static final int DOCK_BLUE = 8;
+    static final int DOCK_AMBER = 9;
+    static final int COUNT = 10;
 
     private static final String[] NAMES = {
-            "Nothing Light", "Glass Dark", "Neo Minimal",
-            "Industrial Mono", "Warm Premium", "Playful Accent"
+            "Dock Classic", "Glass Dark", "Neo Minimal",
+            "Industrial Mono", "Warm Premium", "Playful Accent",
+            "Dock Dark", "Dock Light", "Blue Midnight", "Amber Sunset"
     };
     private static final int[] PLAYFUL_APP_TILES = {
             0xff1d55a0, 0xff355ee8, 0xff17233c, 0xff173d70,
@@ -67,7 +72,7 @@ final class ThemePalette {
     }
 
     static int next(int preset) {
-        return preset < ORIGINAL || preset >= PLAYFUL_ACCENT ? ORIGINAL : preset + 1;
+        return preset < ORIGINAL || preset >= COUNT - 1 ? ORIGINAL : preset + 1;
     }
 
     int appTile(int index) {
@@ -85,6 +90,10 @@ final class ThemePalette {
             case NEO_MINIMAL: return 0x0a000000;
             case WARM_PREMIUM: return 0x30000000;
             case PLAYFUL_ACCENT: return 0x24000000;
+            case DOCK_DARK:
+            case DOCK_BLUE:
+            case DOCK_AMBER: return 0x38000000;
+            case DOCK_LIGHT: return 0x18000000;
             default: return 0x00000000;
         }
     }
@@ -133,6 +142,34 @@ final class ThemePalette {
                         0x385c91de, 0x555f88c4, 0xff8d5cff, 0xff2585ff,
                         0xff54d8b5, 0xffff3151, 0xff8d5cff, 0xffffffff,
                         0xffedf3ff, 0x00000000, false, false, false, true);
+            case DOCK_DARK:
+                return new ThemePalette(preset,
+                        0xff071019, 0xff111923, 0x00000000, 0x00000000,
+                        0xb719222c, 0xc2222c37, 0xfff8f8f6, 0xffc0c5ca,
+                        0x32ffffff, 0x4dffffff, 0xfff17778, 0xff9aa5b1,
+                        0xffd9e0e7, 0xffef7072, 0xfff8f8f6, 0xff10161e,
+                        0xfff4f4f2, 0x00000000, false, false, false, false);
+            case DOCK_LIGHT:
+                return new ThemePalette(preset,
+                        0xffe9e4da, 0xfff2eee7, 0x00000000, 0x00000000,
+                        0xbdf8f5ef, 0xd9ffffff, 0xff111820, 0xff535b63,
+                        0x30111820, 0x4d111820, 0xffef627a, 0xff6f777e,
+                        0xff242a30, 0xffef627a, 0xfff9f7f2, 0xff111820,
+                        0xffffffff, 0x00000000, true, false, false, false);
+            case DOCK_BLUE:
+                return new ThemePalette(preset,
+                        0xff061328, 0xff0d2443, 0x00000000, 0x00000000,
+                        0xb20a2038, 0xc2112b49, 0xfff4f8ff, 0xffb5c4d8,
+                        0x34d7e8ff, 0x55d7e8ff, 0xffa255ef, 0xff6e9ed8,
+                        0xffcbe0ff, 0xffd95eeb, 0xfff5f8ff, 0xff081b31,
+                        0xfff6f9ff, 0x00000000, false, false, false, false);
+            case DOCK_AMBER:
+                return new ThemePalette(preset,
+                        0xff21100c, 0xff472016, 0x00000000, 0x00000000,
+                        0xb83a1d16, 0xd14b271c, 0xfffff7ec, 0xffdfc6b4,
+                        0x3ffff4e8, 0x59fff4e8, 0xffef6b59, 0xffd99a72,
+                        0xffffc49d, 0xffef6b59, 0xfffff8ef, 0xff2b1510,
+                        0xfffff7ed, 0x00000000, false, false, false, false);
             default:
                 if (originalLight) {
                     return new ThemePalette(ORIGINAL,

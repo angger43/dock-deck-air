@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Nothing TV</string>
+    <string name="app_name">Dock Deck Air</string>
+    <string name="brand_name" translatable="false">Dock Deck Air</string>
     <string name="inputs">Inputs</string>
     <string name="wifi">Wi-Fi</string>
     <string name="settings">Settings</string>
@@ -44,7 +45,7 @@
     <string name="vpn">VPN</string>
     <string name="vpn_off">VPN off</string>
     <string name="home_settings">Choose default home</string>
-    <string name="home_settings_help">Select your original launcher to stop using Nothing TV as Home, or select Nothing TV to switch back. The original launcher must remain enabled and the TV must provide a Home-app picker.</string>
+    <string name="home_settings_help">Select your original launcher to stop using Dock Deck Air as Home, or select Dock Deck Air to switch back. The original launcher must remain enabled and the TV must provide a Home-app picker.</string>
     <string name="launcher_settings">Launcher settings</string>
     <string name="columns_label">Apps per row</string>
     <string name="rows_below_dock_label">Rows below dock</string>

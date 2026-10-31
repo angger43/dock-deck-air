@@ -27,7 +27,7 @@ $HomeNow = (& $Adb -s $Target shell cmd package resolve-activity --brief `
     -a android.intent.action.MAIN -c android.intent.category.HOME | Select-Object -Last 1).Trim()
 
 if (-not $HomeNow.StartsWith("com.gathin.tvhome/")) {
-    throw "Installed, but Home resolves to '$HomeNow'. Choose Nothing TV manually in Android TV Settings."
+    throw "Installed, but Home resolves to '$HomeNow'. Choose Dock Deck Air manually in Android TV Settings."
 }
 
 Write-Host "Installed. Home resolves to $HomeNow"

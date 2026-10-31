@@ -8,7 +8,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 
-/** Lightweight NOTHING (TV) launcher shell. */
+/** Lightweight Dock Deck Air launcher shell. */
 public final class MainActivity extends Activity {
     static final String ACTION_VIEW_INPUTS = "com.android.tv.action.VIEW_INPUTS";
     static final String ACTION_LAUNCHER_SETTINGS = "com.gathin.tvhome.LAUNCHER_SETTINGS";
@@ -27,6 +27,8 @@ public final class MainActivity extends Activity {
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
         launcher = new NothingLauncherView(this);
         setContentView(launcher);
+        AdhanScheduler.ensureDefaults(this);
+        AdhanScheduler.schedule(this);
         route(getIntent());
     }
 
@@ -64,6 +66,7 @@ public final class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
+        AdhanScheduler.schedule(this);
         if (launcher != null) launcher.resumeUi();
     }
 
