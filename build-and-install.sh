@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build, install, and select Nothing TV without disabling or uninstalling any package.
+# Build, install, and select Dock Deck Air without disabling or uninstalling any package.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -31,6 +31,6 @@ case "$HOME_NOW" in
   com.gathin.tvhome/*) echo "Installed. Home resolves to $HOME_NOW" ;;
   *)
     echo "Installed, but the firmware reports Home as '${HOME_NOW:-unknown}'." >&2
-    echo "Choose Nothing TV manually in Android TV's default Home-app settings." >&2
+    echo "Choose Dock Deck Air manually in Android TV's default Home-app settings." >&2
     exit 1 ;;
 esac
