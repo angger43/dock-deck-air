@@ -402,9 +402,9 @@ final class NothingLauncherView extends View {
 
         RectF hero=new RectF(48,135,270,350);round(c,hero,15,panel);
         circle(c,159,205,42,selected?palette.iconBackground:panel2);
-        label(c,status.state.kind==DnsProtectionState.Kind.PROTECTED?"✓":selected?"!":"◇",
-                159,220,38,selected?0xff171717:dim,Paint.Align.CENTER,bodyMedium);
-        dot(c,selected?"ADGUARD DNS":"DNS PROTECTION",104,270,2.1f,text);
+        drawProtectionIcon(c,159,205,status.state.kind,selected?0xff171717:dim);
+        label(c,selected?"AdGuard DNS":"DNS protection",159,273,12,text,
+                Paint.Align.CENTER,bodyMedium);
         label(c,status.state.title,159,306,12,stateColor,Paint.Align.CENTER,bodyMedium);
         pill(c,new RectF(108,326,210,347),selected?"SELECTED":"ORIGINAL",false,null);
 
@@ -431,6 +431,22 @@ final class NothingLauncherView extends View {
                 status.canWrite?dim:accent,Paint.Align.RIGHT,body);
         add("adblock_settings",provider,adBlocking::openSupportedSettings,null);
         footer(c,"DNS  /  PROTECTION");
+    }
+
+    private void drawProtectionIcon(Canvas c,float cx,float cy,DnsProtectionState.Kind kind,int color) {
+        p.setColor(color);p.setStyle(Paint.Style.STROKE);p.setStrokeCap(Paint.Cap.ROUND);
+        p.setStrokeJoin(Paint.Join.ROUND);
+        if(kind==DnsProtectionState.Kind.PROTECTED){
+            p.setStrokeWidth(5.5f);path.reset();path.moveTo(cx-18,cy);path.lineTo(cx-6,cy+13);
+            path.lineTo(cx+21,cy-17);c.drawPath(path,p);
+        }else if(kind==DnsProtectionState.Kind.CONNECTION_ERROR||kind==DnsProtectionState.Kind.OFFLINE){
+            p.setStrokeWidth(5f);c.drawLine(cx,cy-18,cx,cy+6,p);p.setStyle(Paint.Style.FILL);
+            c.drawCircle(cx,cy+18,3.2f,p);
+        }else{
+            p.setStrokeWidth(3.5f);path.reset();path.moveTo(cx,cy-20);path.lineTo(cx+20,cy);
+            path.lineTo(cx,cy+20);path.lineTo(cx-20,cy);path.close();c.drawPath(path,p);
+        }
+        p.setStrokeCap(Paint.Cap.BUTT);p.setStrokeJoin(Paint.Join.MITER);p.setStyle(Paint.Style.FILL);
     }
 
     private void drawAccessories(Canvas c) {

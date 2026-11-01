@@ -1,6 +1,6 @@
-# Cardflow Minimal
+# Dock Deck Air
 
-A lightweight, remote-first Android TV launcher built around the Dock Deck Air visual system: a cinematic wallpaper, compact app shelf, glass status cards, and a six-item bottom dock.
+A lightweight, remote-first Android TV launcher with a cinematic wallpaper, compact app shelf, glass status cards, and a six-item bottom dock.
 
 This project is a standalone visual fork of [CleanYourTV](https://github.com/Gathin23/cleanyourtv). It keeps the small Java/Canvas architecture and real Android TV integrations while restyling Home, All Apps, Inputs, Quick Settings, Search, Settings, Network, Remotes & Accessories, Picture & Sound, Media Library, Prayer & Adhan, Apps & Storage, Appearance, Live TV, and the clock screensaver.
 

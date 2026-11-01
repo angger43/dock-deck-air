@@ -11,8 +11,8 @@ android {
         applicationId providers.gradleProperty('launcherApplicationId').getOrElse('com.gathin.tvhome')
         minSdk 26
         targetSdk 34
-        versionCode 15
-        versionName '4.2-cardflow-minimal-adblock'
+        versionCode 16
+        versionName '4.2.1-dock-deck-air-adblock'
     }
 
     buildTypes {
