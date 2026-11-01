@@ -7,12 +7,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
-import android.os.PowerManager;
 import android.provider.Settings;
 
 import java.util.Calendar;
 
-/** Schedules one non-wakeup alarm at a time and rebuilds it after every relevant state change. */
+/** Schedules one exact wakeup alarm at a time and rebuilds it after every relevant state change. */
 final class AdhanScheduler {
     static final String PREFS = "nothing_tv";
     static final String KEY_ENABLED = "adhan_enabled";
@@ -61,32 +60,39 @@ final class AdhanScheduler {
         pending = PendingIntent.getBroadcast(context, REQUEST, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         if (Build.VERSION.SDK_INT >= 31 && alarm.canScheduleExactAlarms()) {
-            alarm.setExactAndAllowWhileIdle(AlarmManager.RTC, event.whenMillis, pending);
+            alarm.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, event.whenMillis, pending);
         } else if (Build.VERSION.SDK_INT >= 23) {
-            alarm.setAndAllowWhileIdle(AlarmManager.RTC, event.whenMillis, pending);
+            alarm.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, event.whenMillis, pending);
         } else {
-            alarm.setExact(AlarmManager.RTC, event.whenMillis, pending);
+            alarm.setExact(AlarmManager.RTC_WAKEUP, event.whenMillis, pending);
         }
         p.edit().putLong("adhan_next_when", event.whenMillis)
                 .putInt("adhan_next_prayer", event.prayerIndex).apply();
     }
 
     static void receive(Context context, Intent intent) {
-        schedule(context);
         SharedPreferences p = prefs(context);
         int prayer = intent.getIntExtra(EXTRA_PRAYER, -1);
         long expected = intent.getLongExtra(EXTRA_WHEN, 0L);
         int mask = p.getInt(KEY_MASK, AdhanPlan.DEFAULT_MASK);
         long drift = Math.abs(System.currentTimeMillis() - expected);
-        PowerManager power = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-        boolean interactive = power != null && power.isInteractive();
         if (!p.getBoolean(KEY_ENABLED, true) || prayer < 0 || prayer >= PrayerTimes.NAMES.length
-                || (mask & (1 << prayer)) == 0 || drift > 4 * 60_000L || !interactive) return;
-        startPlayback(context, prayer, expected, false);
+                || (mask & (1 << prayer)) == 0 || drift > 4 * 60_000L) {
+            schedule(context);
+            return;
+        }
+        try { startPlayback(context, prayer, expected, false); }
+        finally { schedule(context); }
     }
 
-    static void test(Context context) {
-        startPlayback(context, -1, System.currentTimeMillis(), true);
+    static void toggleTest(Context context) {
+        if (AdhanPlaybackService.isPlaying()) stop(context);
+        else startPlayback(context, -1, System.currentTimeMillis(), true);
+    }
+
+    static void stop(Context context) {
+        context.startService(new Intent(context, AdhanPlaybackService.class)
+                .setAction(AdhanPlaybackService.ACTION_STOP));
     }
 
     static boolean exactAccess(Context context) {

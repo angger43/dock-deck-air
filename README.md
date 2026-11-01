@@ -1,6 +1,6 @@
 # Dock Deck Air
 
-A lightweight, remote-first Android TV launcher that reproduces the supplied Dock Deck Air TV reference with a cinematic wallpaper, compact app shelf, glass status cards, and a six-item bottom dock.
+A lightweight, remote-first Android TV launcher with a cinematic wallpaper, compact app shelf, glass status cards, and a six-item bottom dock.
 
 This project is a standalone visual fork of [CleanYourTV](https://github.com/Gathin23/cleanyourtv). It keeps the small Java/Canvas architecture and real Android TV integrations while restyling Home, All Apps, Inputs, Quick Settings, Search, Settings, Network, Remotes & Accessories, Picture & Sound, Media Library, Prayer & Adhan, Apps & Storage, Appearance, Live TV, and the clock screensaver.
 
@@ -13,6 +13,7 @@ This project is a standalone visual fork of [CleanYourTV](https://github.com/Gat
 - Dynamic installed-app discovery, favorites, ordering, app details, and hiding
 - Circular clipped app icons on Home, All Apps, Search, and App Options, with monochrome treatment where the selected theme calls for it
 - Genuine TV input, network, Bluetooth, storage, audio, and package data when Android exposes it
+- Optional AdGuard DNS protection with real Android Private DNS validation and exact restore of the previous DNS configuration
 - Links to the TV's real system settings for restricted controls
 - Dock Dark as the default design, plus Dock Light, Blue Midnight, Amber Sunset, and all six preserved legacy themes
 - Manual Light, Manual Dark, and Automatic brightness behavior
@@ -52,6 +53,24 @@ Captured at 1920×1080 from a real Android TV. Select any image to open the full
 ### Media Library
 
 [![Dock Deck Air Media Library](docs/screenshots/media-library.png)](docs/screenshots/media-library.png)
+
+## Ad Blocking
+
+Open **Settings → Ad Blocking** and press **AdGuard DNS**. When Android grants the launcher permission to manage protected settings, ON selects the public AdGuard DNS-over-TLS hostname `dns.adguard-dns.com`; OFF restores the exact Private DNS mode and hostname captured before it was enabled. The screen reads Android's active `LinkProperties`, so **Protection active**, **Waiting for network**, and **Connection error** describe the real resolver state rather than the switch position.
+
+[![Cardflow Minimal Ad Blocking with validated AdGuard DNS](docs/screenshots/ad-blocking.png)](docs/screenshots/ad-blocking.png)
+
+Android protects Private DNS changes with `WRITE_SECURE_SETTINGS`. Cardflow never asks for a root shell and the installer does not silently grant this permission. On a trusted development TV, automatic switching can be enabled explicitly over ADB:
+
+```sh
+adb shell pm grant com.gathin.tvhome android.permission.WRITE_SECURE_SETTINGS
+```
+
+Without that grant, the control opens Android's supported Private DNS settings flow (or the main TV Settings screen when vendor firmware does not publish a dedicated Private DNS activity). Set **Private DNS provider hostname** to `dns.adguard-dns.com`; returning to Cardflow refreshes the actual status.
+
+This is DNS-level filtering, not content rewriting. It blocks many advertising, tracking, phishing, and telemetry hostnames, but cannot reliably remove ads delivered from the same domains as requested content—most notably some official YouTube video ads. The official YouTube app is neither replaced nor modified. Some networks or streaming services may reject encrypted DNS; switch the control OFF to restore the saved DNS configuration.
+
+The feature uses Android Private DNS directly. It adds no VPN service, background polling, third-party client, analytics, or launcher `INTERNET` permission. Local discovery such as Chromecast and screen mirroring remains on Android's normal network path.
 
 ## Requirements
 

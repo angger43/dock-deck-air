@@ -71,7 +71,7 @@ final class NothingLauncherView extends View {
         ColorMatrix m = new ColorMatrix(); m.setSaturation(0f); MONO = new ColorMatrixColorFilter(m);
     }
 
-    enum Screen { HOME, APPS, INPUTS, QUICK, APP_OPTIONS, SEARCH, SETTINGS, NETWORK,
+    enum Screen { HOME, APPS, INPUTS, QUICK, APP_OPTIONS, SEARCH, SETTINGS, NETWORK, AD_BLOCKING,
         ACCESSORIES, PICTURE_SOUND, MEDIA, PRAYER, APP_STORAGE, PERSONALIZE, LIVE_TV, AMBIENT }
 
     static final class App {
@@ -94,6 +94,7 @@ final class NothingLauncherView extends View {
     private final Path path = new Path();
     private final Typeface body, bodyMedium;
     private final SharedPreferences prefs;
+    private final AdBlockingManager adBlocking;
     private final Handler clock = new Handler(Looper.getMainLooper());
     private final ExecutorService loader = Executors.newSingleThreadExecutor();
     private final ArrayList<Item> items = new ArrayList<>();
@@ -125,6 +126,7 @@ final class NothingLauncherView extends View {
         catch (RuntimeException e) { loaded = Typeface.create("sans-serif", Typeface.NORMAL); }
         body = loaded; bodyMedium = Typeface.create(loaded, Typeface.BOLD);
         prefs = activity.getSharedPreferences("nothing_tv", Context.MODE_PRIVATE);
+        adBlocking = new AdBlockingManager(activity, prefs);
         if (prefs.getInt("dock_deck_ui_version", 0) < 1) {
             prefs.edit().putInt("dock_deck_ui_version", 1)
                     .putInt("theme_preset", ThemePalette.DOCK_DARK).apply();
@@ -226,6 +228,7 @@ final class NothingLauncherView extends View {
             case INPUTS: drawInputs(raw); break; case QUICK: drawQuick(raw); break;
             case APP_OPTIONS: drawAppOptions(raw); break; case SEARCH: drawSearch(raw); break;
             case SETTINGS: drawSettings(raw); break; case NETWORK: drawNetwork(raw); break;
+            case AD_BLOCKING: drawAdBlocking(raw); break;
             case ACCESSORIES: drawAccessories(raw); break; case PICTURE_SOUND: drawPictureSound(raw); break;
             case MEDIA: drawMedia(raw); break; case PRAYER: drawPrayer(raw); break;
             case APP_STORAGE: drawAppStorage(raw); break; case PERSONALIZE: drawPersonalize(raw); break;
@@ -367,8 +370,8 @@ final class NothingLauncherView extends View {
 
     private void drawSettings(Canvas c) {
         header(c,"Settings","Make the TV feel like yours.","");
-        String[] t={"Network & internet","Remotes & accessories","Apps & storage","Home & widgets","Display & sound","System","Profiles & restrictions","About"};
-        for(int i=0;i<8;i++){float y=126+i*31.5f;RectF r=new RectF(34,y,232,y+27);boolean f=focused("settings"+i);if(f)round(c,r,7,0xfff7f7f5);
+        String[] t={"Network & internet","Ad Blocking","Remotes & accessories","Apps & storage","Home & widgets","Display & sound","System","Profiles & restrictions","About"};
+        for(int i=0;i<9;i++){float y=116+i*29.5f;RectF r=new RectF(34,y,232,y+25);boolean f=focused("settings"+i);if(f)round(c,r,7,0xfff7f7f5);
             label(c,settingsGlyph(i),47,y+18,10,f?0xff101820:text,Paint.Align.CENTER,body);label(c,t[i],62,y+18,8.5f,f?0xff101820:text,Paint.Align.LEFT,bodyMedium);final int n=i;add("settings"+i,r,()->settingsAction(n),null);}
         RectF panelRect=new RectF(250,123,686,372);round(c,panelRect,12,0x8f121b24);label(c,"Network & internet",268,151,14,text,Paint.Align.LEFT,bodyMedium);
         RectF current=new RectF(266,165,670,214);round(c,current,9,0xa21e2934);label(c,networkGlyph(),283,189,14,text,Paint.Align.CENTER,body);label(c,networkDetail(),301,185,9,text,Paint.Align.LEFT,bodyMedium);label(c,networkConnected()?"Connected":"Not connected",301,201,7,dim,Paint.Align.LEFT,body);
@@ -387,6 +390,63 @@ final class NothingLauncherView extends View {
         networkRow(c,"network_other",290,250,"Other networks","Scan in system settings",()->openSystem(Settings.ACTION_WIFI_SETTINGS));
         networkRow(c,"network_ethernet",290,305,"Ethernet",isTransport(NetworkCapabilities.TRANSPORT_ETHERNET)?"Connected":"Not connected",()->openSystem(Settings.ACTION_WIRELESS_SETTINGS));
         footer(c,"08  /  NETWORK");
+    }
+
+    private void drawAdBlocking(Canvas c) {
+        header(c,"AD BLOCKING","Private, encrypted DNS without a VPN.","DNS  /  PROTECTION");
+        AdBlockingManager.Status status=adBlocking.status();
+        boolean selected=status.state.adGuardSelected;
+        int stateColor=status.state.kind==DnsProtectionState.Kind.PROTECTED?0xff65d49a:
+                status.state.kind==DnsProtectionState.Kind.CONNECTION_ERROR?danger:
+                status.state.kind==DnsProtectionState.Kind.OFFLINE?accent:dim;
+
+        RectF hero=new RectF(48,135,270,350);round(c,hero,15,panel);
+        circle(c,159,205,42,selected?palette.iconBackground:panel2);
+        drawProtectionIcon(c,159,205,status.state.kind,selected?0xff171717:dim);
+        label(c,selected?"AdGuard DNS":"DNS protection",159,273,12,text,
+                Paint.Align.CENTER,bodyMedium);
+        label(c,status.state.title,159,306,12,stateColor,Paint.Align.CENTER,bodyMedium);
+        pill(c,new RectF(108,326,210,347),selected?"SELECTED":"ORIGINAL",false,null);
+
+        RectF toggle=new RectF(296,135,672,202);boolean toggleFocus=focused("adblock_toggle");
+        round(c,toggle,12,toggleFocus?focusFill():panel);
+        int primary=toggleFocus?focusText():text,secondary=toggleFocus?focusText():dim;
+        label(c,"AdGuard DNS",316,162,13,primary,Paint.Align.LEFT,bodyMedium);
+        label(c,selected?"On":"Off",316,184,9,secondary,Paint.Align.LEFT,body);
+        RectF track=new RectF(606,153,652,181);round(c,track,14,
+                toggleFocus?0x55303a43:selected?0xff65d49a:divider);
+        circle(c,selected?638:620,167,10,toggleFocus?focusText():Color.WHITE);
+        add("adblock_toggle",toggle,this::toggleAdBlocking,null);
+
+        RectF statusCard=new RectF(296,216,672,286);round(c,statusCard,12,panel);
+        label(c,"ACTUAL PROTECTION STATUS",316,238,7,dim,Paint.Align.LEFT,bodyMedium);
+        label(c,status.state.title,316,259,11,stateColor,Paint.Align.LEFT,bodyMedium);
+        label(c,shortLabel(status.error.isEmpty()?status.state.detail:status.error,52),316,277,
+                7.5f,dim,Paint.Align.LEFT,body);
+
+        RectF provider=new RectF(296,300,672,350);round(c,provider,12,panel);
+        label(c,"PROVIDER",316,320,7,dim,Paint.Align.LEFT,bodyMedium);
+        label(c,AdBlockingManager.HOST,316,341,10,text,Paint.Align.LEFT,bodyMedium);
+        label(c,status.canWrite?"Android Private DNS":"Open TV Settings",652,341,8,
+                status.canWrite?dim:accent,Paint.Align.RIGHT,body);
+        add("adblock_settings",provider,adBlocking::openSupportedSettings,null);
+        footer(c,"DNS  /  PROTECTION");
+    }
+
+    private void drawProtectionIcon(Canvas c,float cx,float cy,DnsProtectionState.Kind kind,int color) {
+        p.setColor(color);p.setStyle(Paint.Style.STROKE);p.setStrokeCap(Paint.Cap.ROUND);
+        p.setStrokeJoin(Paint.Join.ROUND);
+        if(kind==DnsProtectionState.Kind.PROTECTED){
+            p.setStrokeWidth(5.5f);path.reset();path.moveTo(cx-18,cy);path.lineTo(cx-6,cy+13);
+            path.lineTo(cx+21,cy-17);c.drawPath(path,p);
+        }else if(kind==DnsProtectionState.Kind.CONNECTION_ERROR||kind==DnsProtectionState.Kind.OFFLINE){
+            p.setStrokeWidth(5f);c.drawLine(cx,cy-18,cx,cy+6,p);p.setStyle(Paint.Style.FILL);
+            c.drawCircle(cx,cy+18,3.2f,p);
+        }else{
+            p.setStrokeWidth(3.5f);path.reset();path.moveTo(cx,cy-20);path.lineTo(cx+20,cy);
+            path.lineTo(cx,cy+20);path.lineTo(cx-20,cy);path.close();c.drawPath(path,p);
+        }
+        p.setStrokeCap(Paint.Cap.BUTT);p.setStrokeJoin(Paint.Join.MITER);p.setStyle(Paint.Style.FILL);
     }
 
     private void drawAccessories(Canvas c) {
@@ -447,11 +507,12 @@ final class NothingLauncherView extends View {
         boolean enabled=prefs.getBoolean(AdhanScheduler.KEY_ENABLED,true);
         prayerSetting(c,"adhan_enabled",255,212,210,"Automatic Adhan",enabled?"Enabled":"Disabled",()->{prefs.edit().putBoolean(AdhanScheduler.KEY_ENABLED,!enabled).apply();AdhanScheduler.schedule(activity);invalidate();});
         int audio=prefs.getInt(AdhanScheduler.KEY_AUDIO,0),volume=prefs.getInt(AdhanScheduler.KEY_VOLUME,65);
-        prayerSetting(c,"adhan_audio",476,212,210,"Audio",audio==0?"Full · 2m 24s":"Brief · 20 sec",()->{prefs.edit().putInt(AdhanScheduler.KEY_AUDIO,(audio+1)%2).apply();invalidate();});
+        prayerSetting(c,"adhan_audio",476,212,210,"Audio",audio==0?"Full · 4m 36s":"Brief · 20 sec",()->{prefs.edit().putInt(AdhanScheduler.KEY_AUDIO,(audio+1)%2).apply();invalidate();});
         prayerSetting(c,"adhan_volume",255,253,431,"Adhan volume",volume+"%",()->{int nextVolume=volume<35?35:volume<65?65:volume<85?85:volume<100?100:20;prefs.edit().putInt(AdhanScheduler.KEY_VOLUME,nextVolume).apply();invalidate();});
         int mask=prefs.getInt(AdhanScheduler.KEY_MASK,AdhanPlan.DEFAULT_MASK);int[] prayerIndexes={0,2,3,4,5};
         for(int i=0;i<prayerIndexes.length;i++){int prayer=prayerIndexes[i];float x=255+i*87;RectF r=new RectF(x,298,x+79,326);boolean on=(mask&(1<<prayer))!=0,f=focused("adhan_prayer"+prayer);round(c,r,9,f?focusFill():on?0xb5313c47:0x67151d25);label(c,PrayerTimes.NAMES[prayer],r.centerX(),316,7.5f,f?focusText():on?text:dim,Paint.Align.CENTER,bodyMedium);add("adhan_prayer"+prayer,r,()->{prefs.edit().putInt(AdhanScheduler.KEY_MASK,mask^(1<<prayer)).apply();AdhanScheduler.schedule(activity);invalidate();},null);}
-        button(c,"adhan_test",new RectF(255,338,451,372),"▶   Test Adhan",()->AdhanScheduler.test(activity));
+        boolean playing=AdhanPlaybackService.isPlaying();
+        button(c,"adhan_test",new RectF(255,338,451,372),playing?"■   Stop Adhan":"▶   Play Adhan",()->{AdhanScheduler.toggleTest(activity);invalidate();});
         boolean exact=AdhanScheduler.exactAccess(activity);button(c,"adhan_exact",new RectF(462,338,686,372),exact?"✓   Exact scheduling":"!   Allow exact scheduling",()->{try{activity.startActivity(AdhanScheduler.exactAccessIntent(activity));}catch(RuntimeException e){toast("Exact alarm settings are unavailable");}});
     }
 
@@ -617,7 +678,8 @@ final class NothingLauncherView extends View {
     private void saveFavorites(List<String> f){prefs.edit().putString("favorites",TextUtils.join(",",f)).apply();}
     private void hideApp(App a){Set<String> h=hidden();h.add(a.pkg);prefs.edit().putString("hidden",TextUtils.join(",",h)).apply();show(Screen.APPS,"app0");}
     private void toggle(String key,boolean def){prefs.edit().putBoolean(key,!prefs.getBoolean(key,def)).apply();invalidate();}
-    private void settingsAction(int n){switch(n){case 0:show(Screen.NETWORK,"network_wifi");break;case 1:show(Screen.ACCESSORIES,"pair");break;case 2:show(Screen.APP_STORAGE,"storage_apps");break;case 3:show(Screen.PERSONALIZE,"appearance_preset");break;case 4:show(Screen.PICTURE_SOUND,"picture0");break;case 5:openSystem(Settings.ACTION_SETTINGS);break;case 6:openSystem(Settings.ACTION_SYNC_SETTINGS);break;default:openSystem(Settings.ACTION_DEVICE_INFO_SETTINGS);}}
+    private void toggleAdBlocking(){AdBlockingManager.Status status=adBlocking.status();boolean changed=status.state.adGuardSelected?adBlocking.disable():adBlocking.enable();if(!changed&&!status.canWrite)adBlocking.openSupportedSettings();invalidate();}
+    private void settingsAction(int n){switch(n){case 0:show(Screen.NETWORK,"network_wifi");break;case 1:show(Screen.AD_BLOCKING,"adblock_toggle");break;case 2:show(Screen.ACCESSORIES,"pair");break;case 3:show(Screen.APP_STORAGE,"storage_apps");break;case 4:show(Screen.PERSONALIZE,"appearance_preset");break;case 5:show(Screen.PICTURE_SOUND,"picture0");break;case 6:openSystem(Settings.ACTION_SETTINGS);break;case 7:openSystem(Settings.ACTION_SYNC_SETTINGS);break;default:openSystem(Settings.ACTION_DEVICE_INFO_SETTINGS);}}
     private void quickAction(int n){switch(n){case 0:show(Screen.NETWORK,"network_wifi");break;case 1:show(Screen.ACCESSORIES,"pair");break;case 2:show(Screen.INPUTS,"input0");break;case 3:openSystem(Settings.ACTION_CAST_SETTINGS);break;case 4:show(Screen.PICTURE_SOUND,"picture0");break;case 5:show(Screen.PICTURE_SOUND,"sound0");break;case 6:openSleepSettings();break;default:openSystem(Settings.ACTION_SETTINGS);}}
     private void openSleepSettings(){openSystem(Settings.ACTION_DREAM_SETTINGS);toast("Sleep and power timers are controlled by TV Settings");}
     private void browseMedia(){try{Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("*/*");activity.startActivity(i);}catch(RuntimeException e){openSystem(Settings.ACTION_INTERNAL_STORAGE_SETTINGS);}}
@@ -632,7 +694,7 @@ final class NothingLauncherView extends View {
     private String stateLabel(int state){return state==TvInputManager.INPUT_STATE_CONNECTED?"Connected":state==TvInputManager.INPUT_STATE_CONNECTED_STANDBY?"Standby":"Unavailable";}
     private String safeInputLabel(TvInputInfo i){try{CharSequence s=i.loadLabel(activity);return s==null?"TV input":s.toString();}catch(RuntimeException e){return "TV input";}}
     private String inputGlyph(TvInputInfo i){return i.getType()==TvInputInfo.TYPE_TUNER?"▣":i.getType()==TvInputInfo.TYPE_HDMI?"↪":"□";}
-    private String settingsGlyph(int i){String[] g={"⌁","▧","◉","⠿","≡","⚝","♙","◷"};return g[Math.max(0,Math.min(g.length-1,i))];}
+    private String settingsGlyph(int i){String[] g={"⌁","◇","▧","◉","⠿","≡","⚝","♙","◷"};return g[Math.max(0,Math.min(g.length-1,i))];}
     private String primaryInputLabel(){for(TvInputInfo i:tvInputs())if(inputState(i)==TvInputManager.INPUT_STATE_CONNECTED)return safeInputLabel(i);return tvInputs().isEmpty()?"Inputs":"Select input";}
     private boolean networkConnected(){ConnectivityManager cm=(ConnectivityManager)activity.getSystemService(Context.CONNECTIVITY_SERVICE);try{Network n=cm.getActiveNetwork();NetworkCapabilities nc=cm.getNetworkCapabilities(n);return nc!=null&&nc.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);}catch(RuntimeException e){return false;}}
     private boolean isTransport(int t){ConnectivityManager cm=(ConnectivityManager)activity.getSystemService(Context.CONNECTIVITY_SERVICE);try{NetworkCapabilities nc=cm.getNetworkCapabilities(cm.getActiveNetwork());return nc!=null&&nc.hasTransport(t);}catch(RuntimeException e){return false;}}
